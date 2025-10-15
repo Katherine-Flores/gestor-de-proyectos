@@ -20,4 +20,19 @@ class Project extends Model
         'fecha_fin_real',
         'porcentaje_avance',
     ];
+
+    public function users()
+    {
+        return $this->belongsToMany(User::class, 'project_user', 'project_id', 'user_id');
+    }
+
+    public function resources()
+    {
+        return $this->hasMany(Resource::class, 'project_id');
+    }
+
+    public function updates()
+    {
+        return $this->hasMany(Update::class, 'project_id');
+    }
 }

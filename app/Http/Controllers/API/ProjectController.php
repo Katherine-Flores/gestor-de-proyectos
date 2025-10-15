@@ -15,8 +15,22 @@ class ProjectController extends Controller
      */
     public function index()
     {
-        $projects = Project::all();
-        return response(['projects' => ProjectResource::collection($projects), 'message' => 'Retrieved successfully'], 200);
+        $user = auth()->user();
+
+        // Control de acceso por roles
+        if ($user->isLider()) {
+            $projects = Project::all();
+        } elseif ($user->isIntegrante() || $user->isCliente()) {
+            // Solo proyectos donde el usuario esté asignado
+            $projects = $user->projects;
+        } else {
+            return response(['message' => 'No autorizado'], 403);
+        }
+
+        return response([
+            'projects' => ProjectResource::collection($projects),
+            'message' => 'Recuperado correctamente'
+        ], 200);
     }
 
     /**
@@ -24,6 +38,11 @@ class ProjectController extends Controller
      */
     public function store(Request $request)
     {
+        // Solo líderes pueden crear proyectos
+        if (!auth()->user()->isLider()) {
+            return response(['message' => 'No autorizado. Solo líderes pueden crear proyectos.'], 403);
+        }
+
         $data = $request->all();
 
         $validator = Validator::make($data, [
@@ -39,12 +58,12 @@ class ProjectController extends Controller
         ]);
 
         if ($validator->fails()) {
-            return response(['errors' => $validator->errors(), 'message' => 'Validation Fail'],400);
+            return response(['errors' => $validator->errors(), 'message' => 'Validación fallida'],400);
         }
 
         $project = Project::create($data);
 
-        return response(['project' => new ProjectResource($project), 'message' => 'Created successfully'], 201);
+        return response(['project' => new ProjectResource($project), 'message' => 'Creado correctamente'], 201);
     }
 
     /**
@@ -52,7 +71,16 @@ class ProjectController extends Controller
      */
     public function show(Project $project)
     {
-        return response(['project' => new ProjectResource($project), 'message' => 'Retrieved successfully'], 200);
+        $user = auth()->user();
+
+        if (!$user->isLider() && !$user->projects->contains($project->id)) {
+            return response(['message' => 'No autorizado para ver este proyecto'], 403);
+        }
+
+        return response([
+            'project' => new ProjectResource($project),
+            'message' => 'Recuperado correctamente'
+        ], 200);
     }
 
     /**
@@ -60,9 +88,32 @@ class ProjectController extends Controller
      */
     public function update(Request $request, Project $project)
     {
+        if (!auth()->user()->isLider()) {
+            return response(['message' => 'No autorizado. Solo líderes pueden modificar proyectos.'], 403);
+        }
+
+        $validator = Validator::make($request->all(), [
+            'nombre' => 'sometimes|string|max:200',
+            'descripcion' => 'nullable|string',
+            'tipo' => 'sometimes|in:software,redes,hardware,otros',
+            'categoria' => 'nullable|string|max:100',
+            'estado' => 'sometimes|in:Planificado,En Ejecución,En Auditoría,Finalizado',
+            'fecha_inicio' => 'nullable|date',
+            'fecha_fin_estimada' => 'nullable|date|after_or_equal:fecha_inicio',
+            'fecha_fin_real' => 'nullable|date|after_or_equal:fecha_inicio',
+            'porcentaje_avance' => 'numeric|min:0|max:100'
+        ]);
+
+        if ($validator->fails()) {
+            return response(['errors' => $validator->errors(), 'message' => 'Validación fallida'], 400);
+        }
+
         $project->update($request->all());
 
-        return response(['project' => new ProjectResource($project), 'message' => 'Updated successfully'], 200);
+        return response([
+            'project' => new ProjectResource($project),
+            'message' => 'Actualizado correctamente'
+        ], 200);
     }
 
     /**
@@ -70,8 +121,12 @@ class ProjectController extends Controller
      */
     public function destroy(Project $project)
     {
+        if (!auth()->user()->isLider()) {
+            return response(['message' => 'No autorizado. Solo líderes pueden eliminar proyectos.'], 403);
+        }
+
         $project->delete();
 
-        return response(['message' => 'Deleted successfully'], 200);
+        return response(['message' => 'Eliminado correctamente'], 200);
     }
 }

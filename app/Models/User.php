@@ -47,4 +47,53 @@ class User extends Authenticatable
             'password' => 'hashed',
         ];
     }
+
+    public function projects()
+    {
+        return $this->belongsToMany(Project::class, 'project_user', 'user_id', 'project_id');
+    }
+
+    public function role()
+    {
+        return $this->belongsTo(Role::class, 'role_id');
+    }
+
+    // Scopes para roles
+    public function scopeLideres($query)
+    {
+        return $query->whereHas('role', function($q) {
+            $q->where('nombre', 'Lider');
+        });
+    }
+
+    public function scopeIntegrantes($query)
+    {
+        return $query->whereHas('role', function($q) {
+            $q->where('nombre', 'Integrante');
+        });
+    }
+
+    public function scopeClientes($query)
+    {
+        return $query->whereHas('role', function($q) {
+            $q->where('nombre', 'Cliente');
+        });
+    }
+
+    // Métodos de verificación de roles
+    public function isLider()
+    {
+        return $this->role->nombre === 'Lider';
+    }
+
+    public function isIntegrante()
+    {
+        return $this->role->nombre === 'Integrante';
+    }
+
+    public function isCliente()
+    {
+        return $this->role->nombre === 'Cliente';
+    }
+
 }
