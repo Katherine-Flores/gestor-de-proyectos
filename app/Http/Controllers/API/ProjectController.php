@@ -39,6 +39,7 @@ class ProjectController extends Controller
     public function store(Request $request)
     {
         // Solo líderes pueden crear proyectos
+        $lider = auth()->user();
         if (!auth()->user()->isLider()) {
             return response(['message' => 'No autorizado. Solo líderes pueden crear proyectos.'], 403);
         }
@@ -54,7 +55,11 @@ class ProjectController extends Controller
             'fecha_inicio' => 'nullable|date',
             'fecha_fin_estimada' => 'nullable|date|after_or_equal:fecha_inicio',
             'fecha_fin_real' => 'nullable|date|after_or_equal:fecha_inicio',
-            'porcentaje_avance' => 'numeric|min:0|max:100'
+            'porcentaje_avance' => 'numeric|min:0|max:100',
+            'clientes' => 'nullable|array',
+            'clientes.*' => 'exists:users,id',
+            'integrantes' => 'nullable|array',
+            'integrantes.*' => 'exists:users,id',
         ]);
 
         if ($validator->fails()) {
@@ -63,7 +68,29 @@ class ProjectController extends Controller
 
         $project = Project::create($data);
 
-        return response(['project' => new ProjectResource($project), 'message' => 'Creado correctamente'], 201);
+        // Asociar usuarios al proyecto
+        $asignados = [];
+
+        // Asignar al lider
+        $asignados[] = $lider->id;
+
+        // Asignar a los clientes
+        if (!empty($data['clientes'])) {
+            $asignados = array_merge($asignados, $data['clientes']);
+        }
+
+        // Asignar a los integrantes
+        if (!empty($data['integrantes'])) {
+            $asignados = array_merge($asignados, $data['integrantes']);
+        }
+
+        // Quitar duplicados por si se repite alguno
+        $asignados = array_unique($asignados);
+
+        // Asignarlos a todos al proyecto
+        $project->users()->attach($asignados);
+
+        return response(['project' => new ProjectResource($project->load('users')), 'message' => 'Proyecto creado y usuarios asignados correctamente'], 201);
     }
 
     /**
@@ -101,7 +128,11 @@ class ProjectController extends Controller
             'fecha_inicio' => 'nullable|date',
             'fecha_fin_estimada' => 'nullable|date|after_or_equal:fecha_inicio',
             'fecha_fin_real' => 'nullable|date|after_or_equal:fecha_inicio',
-            'porcentaje_avance' => 'numeric|min:0|max:100'
+            'porcentaje_avance' => 'numeric|min:0|max:100',
+            'clientes' => 'nullable|array',
+            'clientes.*' => 'exists:users,id',
+            'integrantes' => 'nullable|array',
+            'integrantes.*' => 'exists:users,id',
         ]);
 
         if ($validator->fails()) {
@@ -109,6 +140,27 @@ class ProjectController extends Controller
         }
 
         $project->update($request->all());
+
+        if ($request->has('clientes') || $request->has('integrantes')) {
+            $asignados = [];
+
+            // Mantener al líder
+            $asignados[] = auth()->user()->id;
+
+            // Actualizar clientes
+            if ($request->has('clientes')) {
+                $asignados = array_merge($asignados, $request->clientes ?? []);
+            }
+
+            // Actualizar integrantes
+            if ($request->has('integrantes')) {
+                $asignados = array_merge($asignados, $request->integrantes ?? []);
+            }
+
+            // Actualizar relación (detach + attach)
+            $project->users()->sync(array_unique($asignados));
+        }
+
 
         return response([
             'project' => new ProjectResource($project),
