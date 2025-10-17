@@ -7,6 +7,7 @@ use App\Http\Resources\ProjectResource;
 use App\Models\Project;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Facades\DB;
 
 class ProjectController extends Controller
 {
@@ -60,37 +61,57 @@ class ProjectController extends Controller
             'clientes.*' => 'exists:users,id',
             'integrantes' => 'nullable|array',
             'integrantes.*' => 'exists:users,id',
+            'recursos' => 'nullable|array',
+            'recursos.*.tipo' => 'required_with:recursos|string|in:tiempo,personas,equipos,servicios',
+            'recursos.*.descripcion' => 'required_with:recursos|string|max:255',
+            'recursos.*.cantidad' => 'required_with:recursos|numeric|min:0',
         ]);
 
         if ($validator->fails()) {
             return response(['errors' => $validator->errors(), 'message' => 'Validación fallida'],400);
         }
 
-        $project = Project::create($data);
+        DB::beginTransaction();
+        try {
+            $project = Project::create($data);
 
-        // Asociar usuarios al proyecto
-        $asignados = [];
+            // Asociar usuarios al proyecto
+            $asignados = [];
 
-        // Asignar al lider
-        $asignados[] = $lider->id;
+            // Asignar al lider
+            $asignados[] = $lider->id;
 
-        // Asignar a los clientes
-        if (!empty($data['clientes'])) {
-            $asignados = array_merge($asignados, $data['clientes']);
+            // Asignar a los clientes
+            if (!empty($data['clientes'])) {
+                $asignados = array_merge($asignados, $data['clientes']);
+            }
+
+            // Asignar a los integrantes
+            if (!empty($data['integrantes'])) {
+                $asignados = array_merge($asignados, $data['integrantes']);
+            }
+
+            // Quitar duplicados por si se repite alguno
+            $asignados = array_unique($asignados);
+
+            // Asignarlos a todos al proyecto
+            $project->users()->attach($asignados);
+
+            // Crear recursos
+            if (!empty($data['recursos'])) {
+                foreach ($data['recursos'] as $recurso) {
+                    $project->resources()->create($recurso);
+                }
+            }
+
+            DB::commit();
+
+            return response(['project' => new ProjectResource($project->load('users')), 'message' => 'Proyecto creado y usuarios asignados correctamente'], 201);
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return response(['message' => 'Error al crear el proyecto', 'error' => $e->getMessage()], 500);
         }
-
-        // Asignar a los integrantes
-        if (!empty($data['integrantes'])) {
-            $asignados = array_merge($asignados, $data['integrantes']);
-        }
-
-        // Quitar duplicados por si se repite alguno
-        $asignados = array_unique($asignados);
-
-        // Asignarlos a todos al proyecto
-        $project->users()->attach($asignados);
-
-        return response(['project' => new ProjectResource($project->load('users')), 'message' => 'Proyecto creado y usuarios asignados correctamente'], 201);
     }
 
     /**
@@ -119,7 +140,9 @@ class ProjectController extends Controller
             return response(['message' => 'No autorizado. Solo líderes pueden modificar proyectos.'], 403);
         }
 
-        $validator = Validator::make($request->all(), [
+        $data = $request->all();
+
+        $validator = Validator::make($data, [
             'nombre' => 'sometimes|string|max:200',
             'descripcion' => 'nullable|string',
             'tipo' => 'sometimes|in:software,redes,hardware,otros',
@@ -133,39 +156,67 @@ class ProjectController extends Controller
             'clientes.*' => 'exists:users,id',
             'integrantes' => 'nullable|array',
             'integrantes.*' => 'exists:users,id',
+            'recursos' => 'nullable|array',
+            'recursos.*.tipo' => 'required_with:recursos|string|in:tiempo,personas,equipos,servicios',
+            'recursos.*.descripcion' => 'required_with:recursos|string|max:255',
+            'recursos.*.cantidad' => 'required_with:recursos|numeric|min:0',
         ]);
 
         if ($validator->fails()) {
             return response(['errors' => $validator->errors(), 'message' => 'Validación fallida'], 400);
         }
 
-        $project->update($request->all());
+        DB::beginTransaction();
+        try {
+            $project->update($data);
 
-        if ($request->has('clientes') || $request->has('integrantes')) {
-            $asignados = [];
+            if ($request->has('clientes') || $request->has('integrantes')) {
+                $asignados = [];
 
-            // Mantener al líder
-            $asignados[] = auth()->user()->id;
+                // Mantener al líder
+                $asignados[] = auth()->user()->id;
 
-            // Actualizar clientes
-            if ($request->has('clientes')) {
-                $asignados = array_merge($asignados, $request->clientes ?? []);
+                // Actualizar clientes
+                if ($request->has('clientes')) {
+                    $asignados = array_merge($asignados, $request->clientes ?? []);
+                }
+
+                // Actualizar integrantes
+                if ($request->has('integrantes')) {
+                    $asignados = array_merge($asignados, $request->integrantes ?? []);
+                }
+
+                // Actualizar relación (detach + attach)
+                $project->users()->sync(array_unique($asignados));
             }
 
-            // Actualizar integrantes
-            if ($request->has('integrantes')) {
-                $asignados = array_merge($asignados, $request->integrantes ?? []);
+            // Actualizar recursos
+            if (!empty($data['recursos'])) {
+                foreach ($data['recursos'] as $recursoData) {
+                    if (isset($recursoData['id'])) {
+                        // Si existe ID, actualiza el recurso existente
+                        $recurso = $project->resources()->find($recursoData['id']);
+                        if ($recurso) {
+                            $recurso->update($recursoData);
+                        }
+                    } else {
+                        // Si no tiene ID, es un recurso nuevo
+                        $project->resources()->create($recursoData);
+                    }
+                }
             }
 
-            // Actualizar relación (detach + attach)
-            $project->users()->sync(array_unique($asignados));
+            DB::commit();
+
+            return response([
+                'project' => new ProjectResource($project->load(['users', 'resources'])),
+                'message' => 'Proyecto actualizado correctamente'
+            ], 200);
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return response(['message' => 'Error al actualizar el proyecto', 'error' => $e->getMessage()], 500);
         }
-
-
-        return response([
-            'project' => new ProjectResource($project),
-            'message' => 'Actualizado correctamente'
-        ], 200);
     }
 
     /**
