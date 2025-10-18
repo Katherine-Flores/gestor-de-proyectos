@@ -5,6 +5,7 @@ namespace App\Http\Controllers\API;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\ProjectResource;
 use App\Models\Project;
+use App\Models\Log;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\DB;
@@ -106,6 +107,34 @@ class ProjectController extends Controller
 
             DB::commit();
 
+            // Log
+            $project->load(['users', 'resources']);
+
+            $usuarios = $project->users->map(function ($u) {
+                $rol = match ($u->role_id) {
+                    1 => 'Líder',
+                    2 => 'Integrante',
+                    3 => 'Cliente',
+                    default => 'Desconocido',
+                };
+                return "{$u->nombre} ({$rol})";
+            })->join(', ');
+
+            $recursos = $project->resources->map(function ($r) {
+                return "{$r->tipo}: {$r->descripcion} (Cantidad: {$r->cantidad})";
+            })->join(', ');
+
+            $accion = "Creó el proyecto '{$project->nombre}' (ID {$project->id}). Descripción: {$project->descripcion}.";
+            $accion .= " Tipo: {$project->tipo}, Categoría: {$project->categoria}, Estado inicial: {$project->estado}.";
+            if ($usuarios) $accion .= "Usuarios asignados: {$usuarios}. ";
+            if ($recursos) $accion .= "Recursos: {$recursos}. ";
+
+            Log::create([
+                'user_id' => $lider->id,
+                'accion' => $accion,
+                'created_at' => now(),
+            ]);
+
             return response(['project' => new ProjectResource($project->load('users')), 'message' => 'Proyecto creado y usuarios asignados correctamente'], 201);
 
         } catch (\Exception $e) {
@@ -168,7 +197,19 @@ class ProjectController extends Controller
 
         DB::beginTransaction();
         try {
+            // Guardar valores originales antes de actualizar
+            $original = $project->getOriginal();
+
             $project->update($data);
+
+            $cambios = [];
+
+            // Detectar campos cambiados automáticamente
+            foreach ($project->getChanges() as $campo => $nuevoValor) {
+                if ($campo === 'updated_at') continue; // ignoramos el timestamp
+                $anterior = $original[$campo] ?? 'N/A';
+                $cambios[] = ucfirst($campo) . " cambió de '{$anterior}' a '{$nuevoValor}'";
+            }
 
             if ($request->has('clientes') || $request->has('integrantes')) {
                 $asignados = [];
@@ -188,6 +229,7 @@ class ProjectController extends Controller
 
                 // Actualizar relación (detach + attach)
                 $project->users()->sync(array_unique($asignados));
+                $cambios[] = "Usuarios asignados actualizados";
             }
 
             // Actualizar recursos
@@ -204,9 +246,23 @@ class ProjectController extends Controller
                         $project->resources()->create($recursoData);
                     }
                 }
+                $cambios[] = "Recursos modificados o agregados";
             }
 
             DB::commit();
+
+            // Log
+            $accion = "Actualizó el proyecto '{$project->nombre}' (ID {$project->id}).";
+
+            if (!empty($cambios)) {
+                $accion .= "Cambios: " . implode('; ', $cambios) . ".";
+            }
+
+            Log::create([
+                'user_id' => auth()->id(),
+                'accion' => $accion,
+                'created_at' => now(),
+            ]);
 
             return response([
                 'project' => new ProjectResource($project->load(['users', 'resources'])),
@@ -224,12 +280,49 @@ class ProjectController extends Controller
      */
     public function destroy(Project $project)
     {
-        if (!auth()->user()->isLider()) {
+        $user = auth()->user();
+
+        if (!$user->isLider()) {
             return response(['message' => 'No autorizado. Solo líderes pueden eliminar proyectos.'], 403);
         }
 
-        $project->delete();
+        DB::beginTransaction();
 
-        return response(['message' => 'Eliminado correctamente'], 200);
+        try {
+            // Log
+            $project->load(['users', 'resources']);
+
+            $usuarios = $project->users->map(function ($u) {
+                $rol = match ($u->role_id) {
+                    1 => 'Líder',
+                    2 => 'Integrante',
+                    3 => 'Cliente',
+                    default => 'Desconocido',
+                };
+                return "{$u->nombre} ({$rol})";
+            })->join(', ');
+
+            $recursos = $project->resources->pluck('descripcion')->join(', ') ?: 'Ninguno';
+
+            $accion = "Eliminó el proyecto '{$project->nombre}' (ID {$project->id}). ";
+            $accion .= "Descripción: {$project->descripcion}. ";
+            $accion .= "Recursos: {$recursos}. ";
+            $accion .= "Usuarios asignados: {$usuarios}.";
+
+            $project->delete();
+
+            Log::create([
+                'user_id' => $user->id,
+                'accion' => $accion,
+                'created_at' => now(),
+            ]);
+
+            DB::commit();
+
+            return response(['message' => 'Eliminado correctamente'], 200);
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return response(['message' => 'Error al eliminar el proyecto', 'error' => $e->getMessage()], 500);
+        }
     }
 }
