@@ -68,4 +68,56 @@ class AuthController extends Controller
         return response(['message' => 'Sesión cerrada correctamente']);
     }
 
+    public function updateProfile(Request $request, $id)
+    {
+        $authUser = $request->user();
+        $user = User::findOrFail($id);
+
+        if ($authUser->id !== $user->id && !$authUser->isLider()) {
+            return response()->json(['message' => 'No autorizado.'], 403);
+        }
+
+        $rules = [
+            'nombre' => 'sometimes|string|max:150',
+            'email' => 'sometimes|email|unique:users,email,' . $user->id,
+            'password' => 'sometimes|confirmed|min:6',
+            'current_password' => 'sometimes|required_with:email,password'
+        ];
+
+        // Si el líder edita a otro usuario, puede cambiar el rol
+        if ($authUser->isLider() && $authUser->id !== $user->id) {
+            $rules['role_id'] = 'required|exists:roles,id';
+        }
+
+        $data = $request->validate($rules);
+
+        // Validar contraseña actual si va a cambiar email o password
+        if (($request->has('email') || $request->has('password')) &&
+            !Hash::check($request->current_password, $user->password)) {
+            return response()->json(['message' => 'Contraseña actual incorrecta'], 401);
+        }
+
+        // Evitar que un líder cambie su propio rol
+        if ($authUser->isLider() && $authUser->id === $user->id && isset($data['role_id'])) {
+            unset($data['role_id']);
+        }
+
+        // Encriptar contraseña si fue actualizada
+        if (isset($data['password'])) {
+            $data['password'] = Hash::make($data['password']);
+        }
+
+        $user->update($data);
+
+        return response()->json([
+            'message' => 'Perfil actualizado correctamente',
+            'user' => [
+                'id' => $user->id,
+                'nombre' => $user->nombre,
+                'email' => $user->email,
+                'role' => $user->role->nombre,
+            ]
+        ]);
+    }
+
 }

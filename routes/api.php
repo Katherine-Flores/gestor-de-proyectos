@@ -21,6 +21,8 @@ Route::middleware('auth:api')->group(function () {
 
     Route::post('/logout', [AuthController::class, 'logout']);
 
+    Route::put('/users/{id}/update-profile', [AuthController::class, 'updateProfile']);
+
     Route::apiResource('/projects', ProjectController::class);
 
     Route::apiResource('/updates', UpdateController::class)->only(['index', 'store', 'show']);
