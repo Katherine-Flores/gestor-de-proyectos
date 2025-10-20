@@ -7,6 +7,7 @@ use App\Models\User;
 use App\Models\Role;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Validation\Rules\Password;
 
 class AuthController extends Controller
 {
@@ -15,7 +16,12 @@ class AuthController extends Controller
         $validatedData = $request->validate([
             'nombre' => 'required|max:150',
             'email' => 'required|email|unique:users',
-            'password' => 'required|confirmed',
+            'password' => ['required', 'confirmed', Password::min(8)
+                    ->mixedCase()
+                    ->letters()
+                    ->numbers()
+                    ->symbols()
+                    ->uncompromised()],
             'role_id' => 'sometimes|exists:roles,id',
         ]);
 

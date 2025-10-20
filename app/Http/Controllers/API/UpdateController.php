@@ -46,6 +46,7 @@ class UpdateController extends Controller
             'contenido' => 'required|string|max:500',
             'porcentaje_avance' => 'required|numeric|min:0|max:100',
             'estado_actualizado' => 'nullable|string|max:100',
+            'resultado_final' => 'nullable|required_if:estado_actualizado,Finalizado|in:Completo,Incompleto,Cancelado',
         ]);
 
         if ($validator->fails()) {
@@ -53,13 +54,38 @@ class UpdateController extends Controller
         }
 
         $project = Project::findOrFail($request->project_id);
+        $estado_original = $project->estado;
+
+        $dataToUpdate = [
+            'porcentaje_avance' => $request->porcentaje_avance,
+            'estado' => $request->estado_actualizado ?? $project->estado,
+        ];
+
+        // LÓGICA DE FINALIZACIÓN
+        if ($request->estado_actualizado === 'Finalizado') {
+            $dataToUpdate['resultado_final'] = $request->resultado_final;
+            $dataToUpdate['fecha_fin_real'] = now();
+            if ($request->resultado_final === 'Completo') {
+                $dataToUpdate['porcentaje_avance'] = 100;
+            }
+        } else {
+            $dataToUpdate['resultado_final'] = null;
+        }
+
+        $avanceParaUpdate = $request->porcentaje_avance;
+        if (
+            $request->estado_actualizado === 'Finalizado' &&
+            $request->resultado_final === 'Completo'
+        ) {
+            $avanceParaUpdate = 100; // Si es Completo, forzamos el 100% en el registro histórico
+        }
 
         DB::beginTransaction();
         try {
             // Crear el registro de avance
             $update = $project->updates()->create([
                 'contenido' => $request->contenido,
-                'porcentaje_avance' => $request->porcentaje_avance,
+                'porcentaje_avance' => $avanceParaUpdate,
                 'estado_actualizado' => $request->estado_actualizado ?? $project->estado,
                 'user_id' => auth()->id(),
                 'project_id' => $request->project_id,
@@ -67,20 +93,28 @@ class UpdateController extends Controller
             ]);
 
             // Actualizar el porcentaje del proyecto
-            $project->update(['porcentaje_avance' => $request->porcentaje_avance]);
-            $project->update(['estado' => $request->estado_actualizado ?? $project->estado]);
+            $project->update($dataToUpdate);
 
             DB::commit();
 
             // Log de acción
+            $accion = "Registró un avance ({$project->porcentaje_avance}%) en el proyecto '{$project->nombre}' (ID {$project->id}).";
+            if ($project->estado !== $estado_original) {
+                $accion .= " Estado actualizado a: {$project->estado}.";
+                if ($request->estado_actualizado === 'Finalizado') {
+                    $accion .= " Resultado final: {$project->resultado_final}.";
+                }
+            }
+
             Log::create([
                 'user_id' => auth()->id(),
-                'accion' => "Registró un avance ({$request->porcentaje_avance}%) en el proyecto '{$project->nombre}' (ID {$project->id}).",
+                'accion' => $accion,
                 'created_at' => now(),
             ]);
 
             return response([
                 'message' => 'Avance registrado correctamente',
+                'project' => new ProjectResource($project),
                 'update' => $update
             ], 201);
 

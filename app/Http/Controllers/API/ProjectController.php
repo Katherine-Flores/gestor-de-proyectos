@@ -176,11 +176,8 @@ class ProjectController extends Controller
             'descripcion' => 'nullable|string',
             'tipo' => 'sometimes|in:software,redes,hardware,otros',
             'categoria' => 'nullable|string|max:100',
-            'estado' => 'sometimes|in:Planificado,En Ejecución,En Auditoría,Finalizado',
             'fecha_inicio' => 'nullable|date',
             'fecha_fin_estimada' => 'nullable|date|after_or_equal:fecha_inicio',
-            'fecha_fin_real' => 'nullable|date|after_or_equal:fecha_inicio',
-            'porcentaje_avance' => 'numeric|min:0|max:100',
             'clientes' => 'nullable|array',
             'clientes.*' => 'exists:users,id',
             'integrantes' => 'nullable|array',
@@ -199,6 +196,8 @@ class ProjectController extends Controller
         try {
             // Guardar valores originales antes de actualizar
             $original = $project->getOriginal();
+
+            unset($data['estado'], $data['porcentaje_avance'], $data['fecha_fin_real'], $data['resultado_final']);
 
             $project->update($data);
 

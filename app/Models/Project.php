@@ -15,6 +15,7 @@ class Project extends Model
         'tipo',
         'categoria',
         'estado',
+        'resultado_final',
         'fecha_inicio',
         'fecha_fin_estimada',
         'fecha_fin_real',
