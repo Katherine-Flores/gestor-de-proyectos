@@ -2,10 +2,10 @@
 
 use Illuminate\Support\Facades\Route;
 
-use App\Http\Controllers\API\ProjectController;
+use App\Http\Controllers\ProjectWebController;
 
 Route::get('/', function () {
     return view('welcome');
 });
 
-Route::resource('projects', ProjectController::class);
+Route::resource('projects', ProjectWebController::class);
