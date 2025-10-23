@@ -3,11 +3,10 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
-use App\Models\Project; // <-- Importante: usa tu modelo
-use App\Models\User;    // <-- Para los 'select'
-// use App\Models\Client; // <-- Para los 'select'
+use App\Models\Project; // <-- Asegúrate de que tu modelo esté en app/Models/Project.php
+use App\Models\User;    // <-- Asegúrate de que tu modelo esté en app/Models/User.php
 
-// ¡Nombre de clase cambiado para evitar conflictos!
+// Este es el controlador para TUS VISTAS WEB
 class ProjectWebController extends Controller
 {
     /**
@@ -16,16 +15,12 @@ class ProjectWebController extends Controller
     public function index()
     {
         // --- LÓGICA DE USUARIO COMENTADA TEMPORALMENTE ---
-        // (Porque comentamos el middleware 'auth' en routes/web.php)
         // $user = auth()->user();
-        // if ($user->isLider()) {
-        //     $projects = Project::all();
-        // } else {
-        //     $projects = $user->projects;
-        // }
+        // ... (lógica de roles) ...
 
         // --- LÍNEA TEMPORAL PARA QUE FUNCIONE SIN LOGIN ---
-        $projects = Project::all();
+        // Usamos '\App\Models\Project' para estar seguros de la ruta
+        $projects = \App\Models\Project::all();
 
         // Retornamos la VISTA
         return view('projects.index', [
@@ -49,6 +44,7 @@ class ProjectWebController extends Controller
      */
     public function store(Request $request)
     {
+        // Validación basada en tu controlador de API
         $data = $request->validate([
             'nombre' => 'required|string|max:200',
             'descripcion' => 'nullable|string',
@@ -60,17 +56,20 @@ class ProjectWebController extends Controller
             'integrantes' => 'nullable|array',
         ]);
 
+        // Asignar valores por defecto (basado en tu API)
         $data['estado'] = 'Planificado';
         $data['porcentaje_avance'] = 0;
 
-        $project = Project::create($data);
+        $project = \App\Models\Project::create($data);
 
+        // Asignar usuarios (clientes e integrantes)
         $asignados = [];
         if (!empty($data['clientes'])) $asignados = array_merge($asignados, $data['clientes']);
         if (!empty($data['integrantes'])) $asignados = array_merge($asignados, $data['integrantes']);
 
         $project->users()->sync(array_unique($asignados));
 
+        // Redirigir de vuelta al índice con un mensaje de éxito
         return redirect()->route('projects.index')
             ->with('success', '¡Proyecto creado exitosamente!');
     }
@@ -80,6 +79,7 @@ class ProjectWebController extends Controller
      */
     public function show(Project $project)
     {
+        // Cargar las relaciones para verlas
         $project->load('users', 'resources');
 
         return view('projects.show', [
@@ -92,8 +92,13 @@ class ProjectWebController extends Controller
      */
     public function edit(Project $project)
     {
+        // $all_users = User::all();
+        // $all_clients = User::where('role_id', 3)->get();
+
         return view('projects.edit', [
             'project' => $project
+            // 'all_users' => $all_users,
+            // 'all_clients' => $all_clients
         ]);
     }
 
@@ -119,6 +124,7 @@ class ProjectWebController extends Controller
         if ($request->has('clientes')) $asignados = array_merge($asignados, $request->clientes ?? []);
         if ($request->has('integrantes')) $asignados = array_merge($asignados, $request->integrantes ?? []);
 
+        // Sincronizar los usuarios
         $project->users()->sync(array_unique($asignados));
 
         return redirect()->route('projects.index')

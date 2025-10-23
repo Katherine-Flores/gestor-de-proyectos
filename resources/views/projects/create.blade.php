@@ -7,6 +7,7 @@
         <div class="card-body p-4">
             <h1 class="h3 mb-4">Crear Nuevo Proyecto</h1>
 
+            <!-- Mostrar Errores de Validación -->
             @if ($errors->any())
                 <div class="alert alert-danger">
                     <ul class="mb-0">
@@ -17,30 +18,33 @@
                 </div>
             @endif
 
+            <!-- CORRECCIÓN: 'action' apunta a 'store' y se usa 'POST' -->
             <form action="{{ route('projects.store') }}" method="POST">
-                @csrf
+                @csrf <!-- ¡¡CRÍTICO para seguridad!! -->
 
                 <div class="mb-3">
                     <label for="nombre" class="form-label">Nombre del Proyecto</label>
                     <input type="text" class="form-control" id="nombre" name="nombre" value="{{ old('nombre') }}" required>
                 </div>
-
                 <div class="mb-3">
                     <label for="descripcion" class="form-label">Descripción</label>
                     <textarea class="form-control" id="descripcion" name="descripcion" rows="3">{{ old('descripcion') }}</textarea>
                 </div>
-
                 <div class="row">
                     <div class="col-md-6 mb-3">
                         <label for="tipo" class="form-label">Tipo</label>
-                        <input type="text" class="form-control" id="tipo" name="tipo" value="{{ old('tipo', 'software') }}">
+                        <select name="tipo" id="tipo" class="form-select" required>
+                            <option value="software" {{ old('tipo') == 'software' ? 'selected' : '' }}>Software</option>
+                            <option value="redes" {{ old('tipo') == 'redes' ? 'selected' : '' }}>Redes</option>
+                            <option value="hardware" {{ old('tipo') == 'hardware' ? 'selected' : '' }}>Hardware</option>
+                            <option value="otros" {{ old('tipo') == 'otros' ? 'selected' : '' }}>Otros</option>
+                        </select>
                     </div>
                     <div class="col-md-6 mb-3">
                         <label for="categoria" class="form-label">Categoría</label>
-                        <input type="text" class="form-control" id="categoria" name="categoria" value="{{ old('categoria', 'ERP') }}">
+                        <input type="text" class="form-control" id="categoria" name="categoria" value="{{ old('categoria') }}">
                     </div>
                 </div>
-
                 <div class="row">
                     <div class="col-md-6 mb-3">
                         <label for="fecha_inicio" class="form-label">Fecha de Inicio</label>
@@ -52,30 +56,7 @@
                     </div>
                 </div>
 
-                <hr class="my-4">
-
-                <div class="row">
-                    <div class="col-md-6 mb-3">
-                        <label for="clientes" class="form-label">Clientes (opcional)</label>
-                        <select multiple class="form-control" id="clientes" name="clientes[]">
-                            {{-- @foreach($all_clients as $client)
-                                <option value="{{ $client->id }}">{{ $client->name }}</option>
-                            @endforeach --}}
-                            <option value="2">Cliente Ejemplo 1 (ID 2)</option>
-                        </select>
-                        <small class="text-muted">Puedes seleccionar varios con Ctrl (o Cmd).</small>
-                    </div>
-
-                    <div class="col-md-6 mb-3">
-                        <label for="integrantes" class="form-label">Integrantes (opcional)</label>
-                        <select multiple class="form-control" id="integrantes" name="integrantes[]">
-                            {{-- @foreach($all_users as $user)
-                                <option value="{{ $user->id }}">{{ $user->name }}</option>
-                            @endforeach --}}
-                            <option value="3">Usuario Ejemplo 1 (ID 3)</option>
-                        </select>
-                    </div>
-                </div>
+                <!-- (Campos 'clientes' e 'integrantes' omitidos por simplicidad, los puedes añadir como <select multiple>) -->
 
                 <div class="mt-3">
                     <button type="submit" class="btn btn-primary">Guardar Proyecto</button>
