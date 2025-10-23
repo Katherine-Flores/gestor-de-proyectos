@@ -15,7 +15,7 @@ class ProjectController extends Controller
     /**
      * Display a listing of the resource.
      */
-    public function index()
+    /*public function index()
     {
         $user = auth()->user();
 
@@ -33,7 +33,7 @@ class ProjectController extends Controller
             'projects' => ProjectResource::collection($projects),
             'message' => 'Recuperado correctamente'
         ], 200);
-    }
+    }*/
 
     /**
      * Store a newly created resource in storage.
