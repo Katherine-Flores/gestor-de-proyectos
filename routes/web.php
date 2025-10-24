@@ -27,3 +27,11 @@ Route::group(['prefix' => 'projects'], function () {
         return view('projects.edit', ['project_id' => $id]);
     })->name('projects.edit');
 });
+
+Route::get('/login', function () {
+    return view('auth.login');
+})->name('login');
+
+Route::get('/register', function () {
+    return view('auth.register');
+})->name('register');

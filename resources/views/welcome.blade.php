@@ -102,7 +102,7 @@
         </a>
     </div>
 
-    <a href="sitio_web_principal_url_aqui" class="web-access-link mt-5">
+    <a href="{{ route('login') }}" class="web-access-link mt-5">
         <i class="bi bi-box-arrow-in-right me-2"></i>
         O accede al sitio web
     </a>
