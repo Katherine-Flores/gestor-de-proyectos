@@ -154,6 +154,8 @@ class ProjectController extends Controller
             return response(['message' => 'No autorizado para ver este proyecto'], 403);
         }
 
+        $project->load('resources');
+
         return response([
             'project' => new ProjectResource($project),
             'message' => 'Recuperado correctamente'
@@ -232,20 +234,30 @@ class ProjectController extends Controller
             }
 
             // Actualizar recursos
-            if (!empty($data['recursos'])) {
-                foreach ($data['recursos'] as $recursoData) {
+            if ($request->has('recursos')) {
+                $incomingResources = $request->recursos ?? [];
+                $incomingIds = [];
+
+                foreach ($incomingResources as $recursoData) {
+                    // Si el recurso trae un 'id', lo actualizamos.
                     if (isset($recursoData['id'])) {
-                        // Si existe ID, actualiza el recurso existente
-                        $recurso = $project->resources()->find($recursoData['id']);
-                        if ($recurso) {
-                            $recurso->update($recursoData);
+                        $project->resources()->where('id', $recursoData['id'])->update($recursoData);
+                        $incomingIds[] = $recursoData['id'];
+                    }
+                    // Si no trae 'id', es un recurso nuevo, lo creamos.
+                    else {
+                        if ($recursoData['cantidad'] > 0) {
+                            $newResource = $project->resources()->create($recursoData);
+                            $incomingIds[] = $newResource->id; // Guardar el ID del nuevo recurso
                         }
-                    } else {
-                        // Si no tiene ID, es un recurso nuevo
-                        $project->resources()->create($recursoData);
                     }
                 }
-                $cambios[] = "Recursos modificados o agregados";
+
+                $project->resources()
+                    ->whereNotIn('id', $incomingIds)
+                    ->delete(); // Y los elimina
+
+                $cambios[] = "Recursos completamente sincronizados (modificados, agregados o eliminados)";
             }
 
             DB::commit();
