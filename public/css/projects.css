@@ -1,0 +1,334 @@
+/* ==================================== */
+/* VARIABLES Y BASE DEL USUARIO         */
+/* ==================================== */
+:root {
+    --primary-color: #4361ee;
+    --secondary-color: #3f37c9;
+    --accent-color: #4895ef;
+    --light-color: #f8f9fa;
+    --dark-color: #212529;
+    --success-color: #4cc9f0; /* para exito/acción secundaria */
+    --warning-color: #f72585; /* para warnings */
+    --info-color: #560bad; /* para info */
+    --border-radius: 8px;
+    --box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    --transition: all 0.3s ease;
+}
+
+body {
+    background-color: var(--light-color) !important;
+    font-family: 'Poppins', sans-serif;
+    color: var(--dark-color);
+    line-height: 1.6;
+}
+
+.btn-primary {
+    background-color: var(--primary-color) !important;
+    border-color: var(--primary-color) !important;
+}
+
+/* ==================================== */
+/* LAYOUT DE DASHBOARD (Sidebar & Topbar) */
+/* ==================================== */
+
+/* Estilo para la barra superior */
+.navbar.bg-dark {
+    background-color: var(--primary-color) !important;
+}
+
+.navbar-brand {
+    padding-top: .75rem;
+    padding-bottom: .75rem;
+    background-color: rgba(0, 0, 0, .25);
+}
+
+/* Estilo para la BARRA LATERAL */
+.sidebar {
+    position: fixed;
+    top: 0;
+    padding-top: 56px;
+    bottom: 0;
+    left: 0;
+    z-index: 1000;
+    box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1);
+    background-color: white !important;
+}
+
+/* Estilos de los enlaces en la barra lateral */
+.sidebar .nav-link {
+    font-weight: 500;
+    color: var(--dark-color);
+    padding: .75rem 1rem;
+    transition: var(--transition);
+}
+
+.sidebar .nav-link .fas {
+    margin-right: 8px;
+    width: 1rem;
+}
+
+/* Estado activo del enlace */
+.sidebar .nav-link.active {
+    color: var(--primary-color);
+    background-color: #e9ecef;
+    border-right: 3px solid var(--primary-color);
+    font-weight: 600;
+}
+
+.sidebar .nav-link:hover {
+    color: var(--primary-color);
+}
+
+main {
+    padding-top: 1rem !important;
+}
+
+/* ==================================== */
+/* ESTILOS DE TABLA Y COMPONENTES       */
+/* ==================================== */
+
+/* Cards */
+.card {
+    border-radius: var(--border-radius);
+    border: 1px solid #dee2e6;
+    box-shadow: var(--box-shadow);
+}
+
+/* Estilos de TABLA */
+.table {
+    border-radius: var(--border-radius);
+    overflow: hidden;
+}
+
+.table th, .table td {
+    vertical-align: middle;
+}
+
+/* Encabezado de la tabla */
+.table > :not(caption)>*>* {
+    padding: 0.75rem 1rem;
+}
+
+.table thead th {
+    background-color: #e9ecef !important;
+    color: var(--dark-color);
+    font-weight: 600;
+    border-bottom: 2px solid #dee2e6;
+}
+
+/* ==================================== */
+/* ESTILOS DE ETIQUETAS (BADGES)        */
+/* ==================================== */
+
+/* Estilo Base de Badge */
+.status-badge {
+    padding: 0.35rem 0.8rem;
+    font-size: 0.85rem;
+    font-weight: 600;
+    border-radius: 50px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* Planificado: Usa el color Info/Púrpura (--info-color) */
+.status-badge.bg-planificado {
+    color: var(--info-color) !important;
+    background-color: rgba(99, 0, 191, 0.1) !important;
+}
+.progress-bar-planificado {
+    background-color: var(--info-color) !important;
+}
+
+/* En Ejecución: Usa el color Principal (--primary-color) */
+.status-badge.bg-en-ejecución {
+    color: var(--primary-color) !important;
+    background-color: rgba(67, 97, 238, 0.1) !important;
+}
+.progress-bar-en-ejecución {
+    background-color: var(--primary-color) !important;
+}
+
+/* En Auditoría: Usa el color Warning/Rosa (--warning-color) */
+.status-badge.bg-en-auditoría {
+    color: var(--warning-color) !important;
+    background-color: rgba(247, 37, 133, 0.1) !important;
+}
+.progress-bar-en-auditoría {
+    background-color: var(--warning-color) !important;
+}
+
+/* Finalizado: Usa el color Success/Cian (--success-color) */
+.status-badge.bg-finalizado {
+    color: var(--success-color) !important;
+    background-color: rgba(76, 201, 240, 0.1) !important;
+}
+.progress-bar-finalizado {
+    background-color: var(--success-color) !important;
+}
+
+
+/* ==================================== */
+/* BARRA DE PROGRESO (AVANCE)           */
+/* ==================================== */
+
+.progress-container {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.progress {
+    height: 8px;
+    border-radius: 50px;
+    background-color: #e9ecef;
+    flex-grow: 1;
+    overflow: hidden;
+}
+
+.progress-bar {
+    font-size: 0;
+    height: 100%;
+}
+
+.progress-text {
+    font-size: 0.85rem;
+    font-weight: 600;
+    width: 55px;
+    text-align: right;
+    color: var(--dark-color);
+}
+
+/* ==================================== */
+/* ESTILOS DE BOTONES DE ACCIÓN         */
+/* ==================================== */
+
+.btn-action {
+    padding: 0.3rem 0.6rem;
+    font-size: 0.85rem;
+    margin-right: 5px;
+    border-radius: 0.5rem;
+}
+
+.btn-action {
+    background-color: transparent !important;
+    color: var(--accent-color) !important;
+    border: none;
+    font-size: 16px;
+}
+
+/* ==================================== */
+/* ESTILOS DE BOTONES DE FORMULARIO     */
+/* ==================================== */
+
+.btn-form-action {
+    padding: 0.5rem 1.25rem;
+    font-size: 0.85rem;
+    font-weight: 600;
+    border-radius: 0.5rem;
+    display: inline-flex;
+    align-items: center;
+    transition: var(--transition);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.btn-form-action i {
+    margin-right: 8px;
+    font-size: 1.1rem;
+}
+
+/* Estilos de color para Formulario */
+.btn-form-action.btn-primary {
+    background-color: var(--primary-color) !important;
+    border-color: var(--primary-color) !important;
+    color: white;
+}
+
+.btn-form-action.btn-cancel {
+    background-color: transparent !important;
+    border-color: var(--primary-color) !important;
+    color: var(--primary-color);
+}
+
+.btn-form-action.btn-cancel:hover{
+    background-color: var(--primary-color) !important;
+    border-color: var(--primary-color) !important;
+    color: white;
+}
+
+.btn-form-action.btn-primary:hover{
+    background-color: var(--secondary-color) !important;
+    border-color: var(--secondary-color) !important;
+}
+
+/* Estilo para el botón de Añadir Recurso */
+.btn-form-action.btn-add-resource {
+    background-color: transparent !important;
+    border: none !important;
+    color: var(--accent-color);
+}
+
+/* Ancho fijo para Avance (Progress Bar + Percentage) */
+.col-w-avance {
+    width: 200px !important;
+    white-space: nowrap;
+}
+
+/* ==================================== */
+/* ESTILOS DE ETIQUETAS (RESULTADO FINAL) */
+/* ==================================== */
+
+/* Completo: Estilo de éxito/positivo */
+.status-badge.bg-completo {
+    color: var(--success-color) !important;
+    background-color: rgba(76, 201, 240, 0.1) !important; /* Cian con opacidad */
+}
+
+/* Incompleto: Estilo de advertencia/pendiente */
+.status-badge.bg-incompleto {
+    color: var(--warning-color) !important;
+    background-color: rgba(247, 37, 133, 0.1) !important; /* Rosa con opacidad */
+}
+
+/* Cancelado: Estilo de peligro/negativo */
+.status-badge.bg-cancelado {
+    /* Usaremos un color más fuerte para 'Cancelado' */
+    color: var(--dark-color) !important;
+    background-color: rgba(33, 37, 41, 0.1) !important; /* Negro con opacidad */
+}
+
+/* ==================================== */
+/* MEDIA QUERIES (Responsive)           */
+/* ==================================== */
+
+/* Ajustes para tabletas y móviles */
+@media (max-width: 767.98px) {
+    .sidebar {
+        width: 100%;
+        height: auto;
+        display: none;
+        position: absolute;
+        z-index: 1020;
+    }
+    .sidebar.collapse.show {
+        display: block !important;
+    }
+    /* El contenido principal debe ocupar todo el ancho */
+    .col-md-9.ms-sm-auto {
+        margin-left: 0 !important;
+        padding-left: 1rem !important;
+        padding-right: 1rem !important;
+    }
+    .navbar-toggler {
+        margin-right: 1rem;
+    }
+}
+
+/* Estilo en modo desktop */
+@media (min-width: 768px) {
+    /* Mover el contenido principal para hacer espacio al sidebar */
+    .col-md-9.ms-sm-auto {
+        margin-left: 16.66667% !important;
+    }
+}

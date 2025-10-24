@@ -2,10 +2,28 @@
 
 use Illuminate\Support\Facades\Route;
 
-use App\Http\Controllers\ProjectWebController;
-
 Route::get('/', function () {
     return view('welcome');
 });
 
-Route::resource('projects', ProjectWebController::class);
+Route::group(['prefix' => 'projects'], function () {
+    // Listado de proyectos (index.blade.php)
+    Route::get('/', function () {
+        return view('projects.index');
+    })->name('projects.index');
+
+    // Formulario de creación (create.blade.php)
+    Route::get('/create', function () {
+        return view('projects.create');
+    })->name('projects.create');
+
+    // Detalle del proyecto (show.blade.php)
+    Route::get('/{id}', function ($id) {
+        return view('projects.show', ['project_id' => $id]);
+    })->name('projects.show');
+
+    // Formulario de edición (edit.blade.php)
+    Route::get('/{id}/edit', function ($id) {
+        return view('projects.edit', ['project_id' => $id]);
+    })->name('projects.edit');
+});
