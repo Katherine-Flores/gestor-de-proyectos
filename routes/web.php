@@ -35,3 +35,15 @@ Route::get('/login', function () {
 Route::get('/register', function () {
     return view('auth.register');
 })->name('register');
+
+Route::get('/configuracion', function () {
+    return view('configuracion.index');
+})->name('configuracion.index');
+
+Route::get('/reportes', function () {
+    return view('reportes.index');
+})->name('reportes.index');
+
+Route::get('/users', function () {
+    return view('users.index');
+})->name('users.index');

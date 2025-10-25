@@ -6,13 +6,8 @@ let token = null;
 // =============================================
 // UTILIDADES GLOBALES
 // =============================================
-function getCookie(name) {
-    const value = `; ${document.cookie}`;
-    const parts = value.split(`; ${name}=`);
-    if (parts.length === 2) {
-        return parts.pop().split(';').shift();
-    }
-}
+token = getCookie('token');
+userRole = localStorage.getItem('user_role');
 
 function getProjectIdFromUrl() {
     const match = window.location.pathname.match(/\/projects\/(\d+)/);
@@ -68,12 +63,15 @@ function removeResourceRow() {
     }
 }
 
+token = getCookie('token');
 
 // =============================================
 // LÓGICA DE LISTADO (GET /projects)
 // =============================================
 function renderProjects(projects) {
     let tableBodyHtml = '';
+
+    const isLider = userRole === 'Lider';
 
     if (!projects || projects.length === 0) {
         tableBodyHtml = '<tr><td colspan="5" class="text-center">No hay proyectos para mostrar.</td></tr>';
@@ -85,6 +83,16 @@ function renderProjects(projects) {
 
             const estadoBadge = `<span class="status-badge bg-${estadoNormalizado}">${project.estado}</span>`;
             const progressBarClass = `progress-bar-${estadoNormalizado}`;
+
+            let actionsHtml = '';
+            if (isLider) {
+                actionsHtml = `
+                    <a href="/projects/${project.id}/edit" class="btn btn-action btn-warning"><i class="fas fa-edit"></i></a>
+                    <button type="button" class="btn btn-action btn-danger delete-project-btn" data-id="${project.id}">
+                        <i class="fas fa-trash-alt"></i>
+                    </button>
+                `;
+            }
 
             tableBodyHtml += `
                 <tr>
@@ -104,10 +112,7 @@ function renderProjects(projects) {
                     </td>
                     <td>
                         <a href="/projects/${project.id}" class="btn btn-action btn-info"><i class="fas fa-eye"></i></a>
-                        <a href="/projects/${project.id}/edit" class="btn btn-action btn-warning"><i class="fas fa-edit"></i></a>
-                        <button type="button" class="btn btn-action btn-danger delete-project-btn" data-id="${project.id}">
-                            <i class="fas fa-trash-alt"></i>
-                        </button>
+                        ${actionsHtml}
                     </td>
                 </tr>`;
         });
@@ -571,7 +576,7 @@ $(document).ready(function() {
         });
     });
 
-    $('#logout-button').on('click', function(e) {
+    /*$('#logout-button').on('click', function(e) {
         e.preventDefault();
 
         $.ajax({
@@ -579,13 +584,15 @@ $(document).ready(function() {
             method: 'POST',
             headers: { 'Authorization': 'Bearer ' + token },
             success: function(response) {
+                localStorage.removeItem('user_role');
                 window.location.href = '/login';
             },
             error: function(xhr) {
                 console.error("Fallo al revocar token en la API, forzando redirección.", xhr);
+                localStorage.removeItem('user_role');
                 window.location.href = '/login';
             }
         });
-    });
+    });*/
 
 });
