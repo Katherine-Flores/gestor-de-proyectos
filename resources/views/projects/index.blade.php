@@ -8,7 +8,7 @@
             <div class="d-flex justify-content-between align-items-center mb-3">
                 <h1 class="h3 mb-0">Listado de Proyectos</h1>
                 <!-- CORRECCIÓN: Botón "Crear" apunta a la ruta 'create' -->
-                <a href="{{ route('projects.create') }}" class="btn btn-primary">
+                <a href="{{ route('projects.create') }}" class="btn btn-primary" id="create-project-btn">
                     Crear Nuevo Proyecto
                 </a>
             </div>
@@ -30,4 +30,12 @@
             crossorigin="anonymous"></script>
 
     <script src="{{ asset('js/projects.js') }}"></script>
+
+    <script>
+        $(document).ready(function() {
+            if (localStorage.getItem('user_role') !== 'Lider') {
+                $('#create-project-btn').hide();
+            }
+        });
+    </script>
 @endsection

@@ -29,7 +29,7 @@
 
     <hr class="mt-4">
 
-    <div class="row mt-4">
+    <div class="row mt-4" id="seccion-registrar-actualización">
         <div class="col-md-12">
             <div class="card shadow-sm border-0">
                 <div class="card-header bg-primary text-white">Registrar Nueva Actualización</div>
@@ -79,4 +79,13 @@
             crossorigin="anonymous"></script>
 
     <script src="{{ asset('js/projects.js') }}"></script>
+
+    <script>
+        $(document).ready(function() {
+            if (localStorage.getItem('user_role') !== 'Lider') {
+                $('#edit-link').hide();
+                $('#seccion-registrar-actualización').hide();
+            }
+        });
+    </script>
 @endsection

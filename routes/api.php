@@ -4,6 +4,7 @@ use App\Http\Controllers\API\AuthController;
 use App\Http\Controllers\API\ProjectController;
 use App\Http\Controllers\API\UpdateController;
 use App\Http\Controllers\API\ReportesController;
+use App\Http\Controllers\API\UserController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
@@ -35,7 +36,10 @@ Route::middleware('auth:api')->group(function () {
     Route::get('/reportes/lideres', [ReportesController::class, 'proyectosPorLider']);
     Route::get('/reportes/clientes', [ReportesController::class, 'proyectosPorCliente']);
 
-    Route::middleware('role:Líder')->group(function () {
-        // Rutas exclusivas del lider
+    Route::middleware('role:Lider')->group(function () {
+        Route::group(['prefix' => 'users'], function () {
+            Route::get('/', [UserController::class, 'index']);
+            Route::put('/{user}', [UserController::class, 'updateRole']);
+        });
     });
 });

@@ -21,7 +21,7 @@
 
     <div class="navbar-nav ms-auto me-3">
         <div class="nav-item text-nowrap">
-            <a class="nav-link px-3" href="#" id="logout-button">
+            <a class="nav-link px-3" href="#" id="logout-button-global">
                 <i class="fas fa-power-off me-1"></i> Cerrar Sesión
             </a>
         </div>
@@ -44,17 +44,20 @@
                         </a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="#">
+                        <a class="nav-link {{ request()->is('reportes') || request()->is('reportes/*') ? 'active' : '' }}"
+                           href="{{ route('reportes.index') }}">
                             <i class="fas fa-chart-bar me-2"></i> Reportes
                         </a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="#">
-                            <i class="fas fa-users me-2"></i> Usuarios
+                        <a class="nav-link {{ request()->is('users') || request()->is('users/*') ? 'active' : '' }}"
+                           href="{{ route('users.index') }}">
+                            <i class="fas fa-users-cog me-2"></i> Usuarios
                         </a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="#">
+                        <a class="nav-link {{ request()->is('configuracion') || request()->is('configuracion/*') ? 'active' : '' }}"
+                           href="{{ route('configuracion.index') }}">
                             <i class="fas fa-cog me-2"></i> Configuración
                         </a>
                     </li>
@@ -81,6 +84,20 @@
         crossorigin="anonymous"></script>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+
+<script src="{{ asset('js/auth.js') }}"></script>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const userRole = localStorage.getItem('user_role');
+
+        if (userRole !== 'Lider') {
+            $('a.nav-link:contains("Reportes")').closest('li').hide();
+            $('a.nav-link:contains("Usuarios")').closest('li').hide();
+        }
+    });
+</script>
+
 @yield('scripts')
 
 </body>
