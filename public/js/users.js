@@ -1,6 +1,3 @@
-const API_BASE_URL = 'http://18.216.126.104/api';
-//const API_BASE_URL = 'http://127.0.0.1:8000/api';
-
 const ROLE_NAME_TO_ID = {
     'Lider': 1,
     'Integrante': 2,

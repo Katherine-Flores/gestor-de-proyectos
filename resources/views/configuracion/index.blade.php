@@ -46,17 +46,8 @@
 
 @section('scripts')
     <script src="https://code.jquery.com/jquery-3.7.1.min.js" crossorigin="anonymous"></script>
+    <script src="{{ asset('js/auth.js') }}"></script>
     <script>
-        function getCookie(name) {
-            const value = `; ${document.cookie}`;
-            const parts = value.split(`; ${name}=`);
-            if (parts.length === 2) {
-                return parts.pop().split(';').shift();
-            }
-            return null;
-        }
-
-        const API_BASE_URL = 'http://18.216.126.104/api';
         const token = getCookie('token');
 
         function fetchUserProfile() {
